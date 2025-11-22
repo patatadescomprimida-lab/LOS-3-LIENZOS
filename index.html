@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>RNG SIMULATOR</title>
+    <style>
+        body {
+            background: #0c0c0c;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 40px;
+        }
+
+        h1 {
+            font-size: 50px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 15px 30px;
+            font-size: 22px;
+            background: #ff0066;
+            border: none;
+            border-radius: 12px;
+            color: white;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+
+        #resultado {
+            margin-top: 35px;
+            font-size: 60px;
+            font-weight: bold;
+        }
+
+        #mensaje {
+            margin-top: 15px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffe600;
+        }
+
+        #pity, #intentos {
+            position: absolute;
+            right: 20px;
+            font-size: 22px;
+            opacity: 0.8;
+        }
+
+        #pity { top: 15px; }
+        #intentos { top: 50px; }
+
+        #info {
+            margin-top: 20px;
+            font-size: 18px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>RNG SIMULATOR</h1>
+
+    <div id="pity">Pity: 0</div>
+    <div id="intentos">Intentos: 0</div>
+
+    <button id="btn">Girar</button>
+
+    <div id="resultado"></div>
+    <div id="mensaje"></div>
+
+    <div id="info">El pity e intentos se guardan incluso si cierras esta página.</div>
+
+    <!-- Sonido al girar -->
+    <audio id="soundSpin">
+        <source src="data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA..." type="audio/mp3">
+    </audio>
+
+    <!-- Sonido jackpot -->
+    <audio id="soundWin">
+        <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA..." type="audio/mp3">
+    </audio>
+
+    <script>
+        const btn = document.getElementById("btn");
+        const res = document.getElementById("resultado");
+        const msg = document.getElementById("mensaje");
+        const pityBox = document.getElementById("pity");
+        const intentosBox = document.getElementById("intentos");
+
+        const objetivo = 777;
+
+        // --- Rango solicitado: 1 a 10000 ---
+        const maxNumber = 10000;
+
+        // Cargar datos
+        let pity = Number(localStorage.getItem("pity")) || 0;
+        let intentos = Number(localStorage.getItem("intentos")) || 0;
+
+        pityBox.textContent = "Pity: " + pity;
+        intentosBox.textContent = "Intentos: " + intentos;
+
+        function calcularProbabilidad() {
+            return Math.min((1 + pity) / maxNumber, 1);
+        }
+
+        function guardar() {
+            localStorage.setItem("pity", pity);
+            localStorage.setItem("intentos", intentos);
+        }
+
+        btn.addEventListener("click", () => {
+            const spinAudio = document.getElementById("soundSpin");
+            if (spinAudio) try { spinAudio.play(); } catch(e){}
+
+            btn.disabled = true;
+            msg.textContent = "";
+            res.textContent = "";
+
+            let ticks = 20 + Math.floor(Math.random() * 10);
+            let contador = 0;
+
+            let anim = setInterval(() => {
+                contador++;
+                res.textContent = Math.floor(Math.random() * maxNumber) + 1;
+
+                if (contador >= ticks) {
+                    clearInterval(anim);
+
+                    let prob = calcularProbabilidad();
+                    let sale = Math.random() < prob;
+
+                    let finalNum = sale ? objetivo : Math.floor(Math.random() * maxNumber) + 1;
+                    res.textContent = finalNum;
+
+                    intentos++;
+                    intentosBox.textContent = "Intentos: " + intentos;
+
+                    if (finalNum === objetivo) {
+                        msg.textContent = "ELMAYORSECRETODELUNIVERSO";
+                        pity = 0;
+                        intentos = 0;
+                        pityBox.textContent = "Pity: 0";
+                        intentosBox.textContent = "Intentos: 0";
+                        const winAudio = document.getElementById("soundWin");
+                        if (winAudio) try { winAudio.play(); } catch(e){}
+                    } else {
+                        pity++;
+                        pityBox.textContent = "Pity: " + pity;
+                    }
+
+                    guardar();
+                    btn.disabled = false;
+                }
+            }, 80);
+        });
+    </script>
+
+</body>
+</html>
